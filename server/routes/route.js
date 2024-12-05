@@ -1,17 +1,17 @@
-
-const routes = require('express').Router();
+const express = require('express');
+const router = express.Router();
 const controller = require('../controller/controller');
 
-routes.route('/api/categories')
-    .post(controller.create_Categories)
-    .get(controller.get_Categories)
+// Categories Routes
+router.post('/api/categories', controller.createCategories);
+router.get('/api/categories', controller.getCategories);
 
-routes.route('/api/transaction')
-    .post(controller.create_Transaction)
-    .get(controller.get_Transaction)
-    .delete(controller.delete_Transaction)
+// Transaction Routes
+router.post('/api/transaction', controller.createTransaction);
+router.get('/api/transaction', controller.getTransactions);
+router.delete('/api/transaction', controller.deleteTransaction);
 
-routes.route('/api/labels')
-    .get(controller.get_Labels)
+// Labels Route
+router.get('/api/labels', controller.getLabels);
 
-module.exports = routes;
+module.exports = router;

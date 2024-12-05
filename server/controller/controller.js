@@ -1,110 +1,112 @@
 const model = require('../models/model');
 
+// Utility function for sending error responses
+const handleError = (res, err, message, status = 500) => {
+    res.status(status).json({ message: `${message}: ${err.message}` });
+};
+
 // POST: http://localhost:8080/api/categories
-async function create_Categories(req, res) {
+const createCategories = async (req, res) => {
     try {
-        const Create = new model.Categories({
+        const category = new model.Categories({
             type: "Investment",
             color: "#FCBE44"
         });
 
-        const savedCategory = await Create.save(); // Await save operation
-        return res.json(savedCategory);
+        const savedCategory = await category.save();
+        res.json(savedCategory);
     } catch (err) {
-        return res.status(400).json({ message: `Error while creating categories: ${err.message}` });
+        handleError(res, err, "Error while creating categories", 400);
     }
-}
+};
 
 // GET: http://localhost:8080/api/categories
-async function get_Categories(req, res) {
+const getCategories = async (req, res) => {
     try {
-        let data = await model.Categories.find({});
-        let filter = data.map(v => ({ type: v.type, color: v.color }));
-        return res.json(filter);
+        const categories = await model.Categories.find({});
+        const filteredData = categories.map(({ type, color }) => ({ type, color }));
+        res.json(filteredData);
     } catch (err) {
-        return res.status(500).json({ message: `Error while fetching categories: ${err.message}` });
+        handleError(res, err, "Error while fetching categories");
     }
-}
+};
 
 // POST: http://localhost:8080/api/transaction
-async function create_Transaction(req, res) {
+const createTransaction = async (req, res) => {
     if (!req.body) return res.status(400).json("Post HTTP Data not Provided");
 
     try {
-        let { name, type, amount } = req.body;
-
-        const create = new model.Transaction({
+        const { name, type, amount } = req.body;
+        const transaction = new model.Transaction({
             name,
             type,
             amount,
             date: new Date()
         });
 
-        const savedTransaction = await create.save(); // Await save operation
-        return res.json(savedTransaction);
+        const savedTransaction = await transaction.save();
+        res.json(savedTransaction);
     } catch (err) {
-        return res.status(400).json({ message: `Error while creating transaction: ${err.message}` });
+        handleError(res, err, "Error while creating transaction", 400);
     }
-}
+};
 
 // GET: http://localhost:8080/api/transaction
-async function get_Transaction(req, res) {
+const getTransactions = async (req, res) => {
     try {
-        let data = await model.Transaction.find({});
-        return res.json(data);
+        const transactions = await model.Transaction.find({});
+        res.json(transactions);
     } catch (err) {
-        return res.status(500).json({ message: `Error while fetching transactions: ${err.message}` });
+        handleError(res, err, "Error while fetching transactions");
     }
-}
+};
 
 // DELETE: http://localhost:8080/api/transaction
-async function delete_Transaction(req, res) {
+const deleteTransaction = async (req, res) => {
     if (!req.body) return res.status(400).json({ message: "Request body not Found" });
 
     try {
         await model.Transaction.deleteOne(req.body);
-        return res.json("Record Deleted...!");
+        res.json("Record Deleted...!");
     } catch (err) {
-        return res.status(500).json({ message: `Error while deleting transaction: ${err.message}` });
+        handleError(res, err, "Error while deleting transaction");
     }
-}
+};
 
 // GET: http://localhost:8080/api/labels
-async function get_Labels(req, res) {
+const getLabels = async (req, res) => {
     try {
-        const result = await model.Transaction.aggregate([
+        const aggregatedData = await model.Transaction.aggregate([
             {
                 $lookup: {
                     from: "categories",
-                    localField: 'type',
+                    localField: "type",
                     foreignField: "type",
                     as: "categories_info"
                 }
             },
-            {
-                $unwind: "$categories_info"
-            }
+            { $unwind: "$categories_info" }
         ]);
 
-        const data = result.map(v => Object.assign({},{
-            _id: v._id,
-            name: v.name,
-            type: v.type,
-            amount: v.amount,
-            color: v.categories_info['color']
+        const labeledData = aggregatedData.map(({ _id, name, type, amount, categories_info }) => ({
+            _id,
+            name,
+            type,
+            amount,
+            color: categories_info.color
         }));
 
-        return res.json(data);
-    } catch (error) {
-        return res.status(400).json({ message: `Lookup Collection Error: ${error.message}` });
+        res.json(labeledData);
+    } catch (err) {
+        handleError(res, err, "Lookup Collection Error", 400);
     }
-}
+};
 
 module.exports = {
-    create_Categories,
-    get_Categories,
-    create_Transaction,
-    get_Transaction,
-    delete_Transaction,
-    get_Labels
+    createCategories,
+    getCategories,
+    createTransaction,
+    getTransactions,
+    deleteTransaction,
+    getLabels
 };

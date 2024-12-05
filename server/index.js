@@ -1,4 +1,3 @@
-// index.js
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -7,26 +6,28 @@ require('dotenv').config();
 const app = express();
 
 const port = process.env.PORT || 8080;
-// const port = 8080;
 
-const con = require('./db/connection.js');
+const connectDatabase = require('./db/connection.js');
 
 app.use(cors());
 app.use(express.json());
 
+// Importing routes
+app.use(require('./routes/api'));
 
-app.use(require('./routes/route'));
+connectDatabase
+    .then((db) => {
+        if (!db) return process.exit(1);
 
-con.then(db => {
-    if(!db) return process.exit(1);
+        // Start the server
+        app.listen(port, () => {
+            console.log(`Server is running on: http://localhost:${port}`);
+        });
 
-    // listen to the http server 
-    app.listen(port, () => {
-        console.log(`Server is running on port: http://localhost:${port}`)
+        app.on('error', (err) =>
+            console.log(`Failed to connect with HTTP server: ${err}`)
+        );
     })
-
-    app.on('error', err => console.log(`Failed To Connect with HTTP Server : ${err}`));
-    // error in mondb connection
-}).catch(error => {
-    console.log(`Connection Failed...! ${error}`);
-});
+    .catch((error) => {
+        console.log(`Database connection failed: ${error}`);
+    });
